@@ -48,11 +48,17 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Reference Include="Assembly-CSharp">
+        <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Blue Prince\BepInEx\interop\Assembly-CSharp.dll</HintPath>
+      </Reference>
       <Reference Include="Il2Cppmscorlib">
         <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Blue Prince\BepInEx\interop\Il2Cppmscorlib.dll</HintPath>
       </Reference>
       <Reference Include="Il2CppSystem">
         <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Blue Prince\BepInEx\interop\Il2CppSystem.dll</HintPath>
+      </Reference>
+      <Reference Include="PlayMaker">
+        <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Blue Prince\BepInEx\interop\PlayMaker.dll</HintPath>
       </Reference>
       <Reference Include="UnityEngine">
         <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Blue Prince\BepInEx\interop\UnityEngine.dll</HintPath>

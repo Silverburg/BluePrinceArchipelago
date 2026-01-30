@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BluePrinceArchipelago.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,33 +8,67 @@ using UnityEngine;
 
 namespace BluePrinceArchipelago.ModRooms
 {
-    internal class ModRoomManager {
-        public static List<ModRoom> rooms = new List<ModRoom>();
+    public class ModRoomManager {
+        private List<ModRoom> rooms = new List<ModRoom>();
+        public List<ModRoom> Rooms { 
+            get { return rooms; }
+            set { rooms = value; }
+        }
+
         public ModRoomManager() {
         }
         public void AddRoom(ModRoom room) { 
             rooms.Add(room);
         }
         public void AddRoom(string name, List<string> pickerArrays, bool isUnlocked, bool isRandomizable = true) {
-            rooms.Add(new ModRoom(name, GameObject.Find(name), pickerArrays, isUnlocked, isRandomizable));
+            rooms.Add(new ModRoom(name, GameObject.Find("__SYSTEM/The Room Engines/" + name), pickerArrays, isUnlocked, isRandomizable));
+        }
+        public void Intialize() {
+            Plugin.BepinLogger.LogMessage("Attempting to modify room pools");
+            foreach (ModRoom room in rooms) {
+                Plugin.BepinLogger.LogMessage($"\t{room.Name}");
+                if (room.IsUnlocked && room.IsRandomizable)
+                {
+                    Plugin.BepinLogger.LogMessage($"\t{room.Name}");
+                    ArchipelagoConsole.LogMessage($"\t{room.Name}");
+                    foreach (string arrayName in room.PickerArrays)
+                    {
+                        PlayMakerArrayListProxy array = ModInstance.PickerDict[arrayName];
+                        if (!array.arrayList.Contains(room.GameObj))
+                        {
+                            array.Add(room.GameObj, "GameObject");
+                            Plugin.BepinLogger.LogMessage($"Added {room.Name} to {arrayName}");
+                        }
+                    }
+                }
+                else if (room.IsRandomizable)
+                {
+                    foreach (string arrayName in room.PickerArrays)
+                    {
+                        PlayMakerArrayListProxy array = ModInstance.PickerDict[arrayName];
+                        if (array.arrayList.Contains(room.GameObj))
+                        {
+                            array.Remove(room.GameObj, "GameObject");
+                            Plugin.BepinLogger.LogMessage($"Removed {room.Name} from {arrayName}");
+                        }
+                    }
+                }
+            }
         }
     }
-    internal class ModRoom
+    public class ModRoom
     {
-        private string Name { get; set; }
-        private GameObject GameObj { get; set; }
-        private List<string> PickerArrays { get; set; }
-        private bool IsUnlocked { get; set; }
-        private bool HasBeenDrafted { get; set; }
-        private bool IsRandomizable { get; set; }
+        public string Name { get; set; }
+        public GameObject GameObj { get; set; }
+        public List<string> PickerArrays { get; set; }
+        public bool IsUnlocked { get; set; }
+        public bool HasBeenDrafted { get; set; }
+        public bool IsRandomizable { get; set; }
         
 
         public ModRoom(String name, GameObject gameObject, List<string> pickerArrays, bool isUnlocked, bool isRandomizable = true) { 
             Name = name;
             GameObj = gameObject;
-            foreach (string arrayName in pickerArrays) {
-                //handle get array objects and add them to the arrays.
-            }
             PickerArrays = pickerArrays;
             IsUnlocked = isUnlocked;
             HasBeenDrafted = false;
