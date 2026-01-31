@@ -7,6 +7,7 @@ using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.Packets;
 using BluePrinceArchipelago.Utils;
+using BluePrinceArchipelago.Events;
 
 namespace BluePrinceArchipelago.Archipelago;
 
@@ -52,7 +53,9 @@ public class ArchipelagoClient
         session.Items.ItemReceived += OnItemReceived;
         session.Socket.ErrorReceived += OnSessionErrorReceived;
         session.Socket.SocketClosed += OnSessionSocketClosed;
+        EventHandlers.LocationFound += OnLocalItemFound; //subscribe to local items found.
     }
+
 
     /// <summary>
     /// attempt to connect to the server with our connection info
@@ -169,5 +172,8 @@ public class ArchipelagoClient
     {
         Plugin.BepinLogger.LogError($"Connection to Archipelago lost: {reason}");
         Disconnect();
+    }
+    private void OnLocalItemFound(LocationEventArgs e) { 
+
     }
 }

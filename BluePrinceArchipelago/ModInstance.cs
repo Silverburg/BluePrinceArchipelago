@@ -97,7 +97,7 @@ namespace BluePrinceArchipelago
         {
             if (HasInitializedRooms)
             {
-
+                Plugin.BepinLogger.LogMessage("Updating Rooms");
                 Plugin.ModRoomManager.UpdateRoomPools();
             }
             else {
