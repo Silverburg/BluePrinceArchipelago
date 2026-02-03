@@ -39,18 +39,6 @@ namespace BluePrinceArchipelago.Utils
             return 0;
         }
         /// <summary>
-        ///     Gets the Count of a PlayMakerArrayListProxy.
-        /// </summary>
-        /// <param name="arrayListProxy">The PlayMakerArrayListProxy</param>
-        /// <param name="value">The Object to add to the Array</param>
-        public static void Add(this PlayMakerArrayListProxy arrayListProxy, Il2CppSystem.Object value) {
-            Il2CppSystem.Collections.ArrayList arrayList = arrayListProxy.arrayList;
-            if (arrayList != null)
-            {
-                arrayList.Add(value);
-            }
-        }
-        /// <summary>
         ///     Checks if the PlayMakerArrayListProxy contains a value
         /// </summary>
         /// <param name="arrayListProxy">The PlayMakerArrayListProxy</param>
@@ -75,7 +63,7 @@ namespace BluePrinceArchipelago.Utils
             Il2CppSystem.Collections.ArrayList arrayList = arrayListProxy.arrayList;
             if (arrayList != null && arrayList.Count > index && index > -1)
             {
-                arrayList.RemoveAt(index);
+                arrayListProxy.Remove(arrayList[index], arrayList[index].GetType().ToString()); //Use the in built remove function to make sure nothing in the PlayMakerArrayListProxy Breaks.
             }
         }
 
