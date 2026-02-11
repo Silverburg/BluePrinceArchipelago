@@ -11,10 +11,6 @@ namespace BluePrinceArchipelago.Core
 {
     public class ModItemManager
     {
-        public static Queue<string> ItemQueue = new(); // stores a string representing which queue to pull from next.
-        public static Queue<ModItem> GenericItemQueue = new(); 
-        public static Queue<UniqueItem> UniqueItemQueue = new();
-        public static Queue<JunkItem> JunkItemQueue = new();
         public static List<PermanentItem> PermanentItemList = []; //Permanent items do not need to use a queue since any active Permanent Items will be added on day start.
         public static List<ModItem> GenericItemList = new();
         public static List<UniqueItem> UniqueItemList = new();
@@ -178,34 +174,6 @@ namespace BluePrinceArchipelago.Core
             AddAllPermanenentItems();
         }
         // returns true if item was released from queue, returns false if no item in queue to release or failed to release the item.
-        public bool ReleaseNextItemInQueue() {
-            if (ItemQueue.Count > 0) {
-                string queueType = ItemQueue.Dequeue();
-                if (queueType == "Generic")
-                {
-                    if (GenericItemQueue.Count > 0) {
-                        GenericItemQueue.Dequeue().AddItemToInventory(); //Dequeue the next item to release.
-                    }
-                }
-                else if (queueType == "Unique")
-                {
-                    if (UniqueItemQueue.Count > 0) { 
-                        UniqueItemQueue.Dequeue().AddItemToInventory();
-                    }
-                }
-                else if (queueType == "Junk")
-                {
-                    if (JunkItemQueue.Count > 0)
-                    {
-                        JunkItemQueue.Dequeue().AddItemToInventory();
-                    }
-                }
-                else {
-                    Plugin.BepinLogger.LogWarning($"{queueType} is not a valid Queue type, no item to release.");
-                }
-            }
-            return false;
-        }
 
         // Adds all permanent items to inventory, meant to be run at start of day.
         public void AddAllPermanenentItems() {
@@ -319,21 +287,21 @@ namespace BluePrinceArchipelago.Core
         public virtual void AddItemToInventory() { 
             //TODO add code handling adding the item.
         }
-        public virtual void AddItemToQueue() { 
-            ModItemManager.GenericItemQueue.Enqueue(this);
-            ModItemManager.ItemQueue.Enqueue("Generic");
-        }
     }
     public class UniqueItem(string name, GameObject gameObject, bool isUnlocked) : ModItem(name, gameObject, isUnlocked) {
         
-        private bool _IsUnique = true; //override IsUnique.
-
-        public override void AddItemToQueue()
-        {
-            ModItemManager.UniqueItemQueue.Enqueue(this);
-            ModItemManager.ItemQueue.Enqueue("Unique");
+        private bool _IsUnique = true;
+        public new bool IsUnique { 
+            get { return _IsUnique; } 
+            set { _IsUnique = value; }
         }
-        public override void AddItemToInventory() { }
+
+        public override void AddItemToInventory() {
+            if (!IsUnlocked) { 
+                IsUnlocked = true;
+            }
+            //Todo add code handling adding the item.
+        }
     }
 
     // handles junk and trap items (as inverse traps).
@@ -365,11 +333,6 @@ namespace BluePrinceArchipelago.Core
         private bool _IsTrap = count < 0; 
         public bool IsTrap { 
             get { return _IsTrap; } //No setter since this is connected to count
-        }
-        public override void AddItemToQueue()
-        {
-            ModItemManager.JunkItemQueue.Enqueue(this);
-            ModItemManager.ItemQueue.Enqueue("Junk");
         }
 
         public override void AddItemToInventory() {

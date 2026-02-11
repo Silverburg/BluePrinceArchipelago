@@ -152,10 +152,7 @@ namespace BluePrinceArchipelago
                 Plugin.BepinLogger.LogMessage($"Transform: {transformObj.name} - {transformObj.transform.position.ToString()}");
             }
         }
-        // handles Day start code. Currently unsure if this is good timing for things.
-        public static void OnDayStart(int dayNum) {
-
-            // Attempt to recieve items that were recieved before the game was loaded.
+        public static void ReleaseAllItemsInQueue() {
             if (ReceivedItemQueue.Count > 0)
             {
                 for (int i = 0; i < ReceivedItemQueue.Count; i++)
@@ -167,10 +164,14 @@ namespace BluePrinceArchipelago
                     }
                 }
             }
-
+        }
+        // handles Day start code. Currently unsure if this is good timing for things.
+        public static void OnDayStart(int dayNum) {
+            _IsInRun = true;
+            // Attempt to recieve items that were recieved before the game was loaded.
+            ReleaseAllItemsInQueue();
             // Handle Start of day code for Permanent items (and maybe curses later).
             Plugin.ModItemManager.StartOfDay(dayNum);
-            _IsInRun = true;
         }
         // handles end of day code, Currently unsure if this is good timing.
         public static void OnDayEnd() {
