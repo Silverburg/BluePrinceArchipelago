@@ -1,24 +1,38 @@
 ﻿using Archipelago.MultiClient.Net.Models;
 using BluePrinceArchipelago.Utils;
 using System.Collections.Generic;
+using System.Xml.Linq;
 using UnityEngine;
 
 namespace BluePrinceArchipelago.Core
 {
     public class ModItemManager
     {
-        public static List<PermanentItem> PermanentItemList = []; //Permanent items do not need to use a queue since any active Permanent Items will be added on day start.
+        public static List<PermanentItem> PermanentItemList = [];
         public static List<ModItem> GenericItemList = new();
         public static List<UniqueItem> UniqueItemList = new();
         public static List<JunkItem> JunkItemList = new();
         public static Dictionary<string, string> ItemDict = new(); //Item name is the key, the type of item is the value.
-
+        public static PlayMakerArrayListProxy PreSpawn = new();
+        public static PlayMakerArrayListProxy EstateItems = new();
+        public static PlayMakerArrayListProxy PickedUp = new();
+        public static PlayMakerArrayListProxy CoatCheck = new();
+        public static PlayMakerArrayListProxy UsedItems = new();
+        
 
         public ModItemManager()
         {
         }
         public void Initialize() { 
 
+        }
+        public static void LoadInventories() {
+         
+            PreSpawn = GameObject.Find("__SYSTEM/Inventory/Inventory (PreSpawn)")?.GetArrayListProxy("Inventory (PreSpawn)");
+            EstateItems = GameObject.Find("__SYSTEM/Inventory/Inventory (EstateItems)")?.GetArrayListProxy("Inventory (EstateItems)");
+            PickedUp = GameObject.Find("__SYSTEM/Inventory/Inventory (PickedUp)")?.GetArrayListProxy("Inventory (PickedUp)");
+            CoatCheck = GameObject.Find("__SYSTEM/Inventory/Inventory (CoatCheck)")?.GetArrayListProxy("Inventory (CoatCheck)");
+            UsedItems = GameObject.Find("__SYSTEM/Inventory/Inventory (UsedItems)")?.GetArrayListProxy("Inventory (UsedItems)");
         }
         // Adds a generic item, or 1 to it's count if it already exists.
         public void AddItem(ModItem itemToAdd, int count = 1) {
@@ -79,7 +93,7 @@ namespace BluePrinceArchipelago.Core
             ItemDict[itemToAdd.Name] = "Permanent";
             PermanentItemList.Add(itemToAdd);
         }
-        public void AddItem(string name, GameObject gameObject, bool isUnlocked, bool isUnique = false, bool isJunk = false, bool isPermanent = false,int count = 1, string itemType = null) {
+        public void AddItem(string name, GameObject gameObject, bool isUnlocked, bool isUnique = false, bool isJunk = false, bool isPermanent = false, int count = 1, string itemType = null) {
             if (isUnique)
             {
                 if (isJunk || isPermanent || itemType != null || count > 1 || count < 1)
@@ -176,25 +190,58 @@ namespace BluePrinceArchipelago.Core
             if (PermanentItemList.Count > 0) {
                 foreach (PermanentItem item in PermanentItemList) {
                     if (item.IsUnlocked) {
+                        Plugin.BepinLogger.LogMessage($"Adding {item.Count} {item.Name}(s)");
                         item.AddItemToInventory();
                     }
                 }
+
             }
         }
 
-        public void OnItemCheckRecieved(ItemInfo item) {
+        public void OnItemCheckRecieved(ItemInfo itemInfo) {
             // Handle the code for recieving an item check that results in receiving an item.
-            if (ItemDict.ContainsKey(item.ItemName))
+            string itemType;
+            bool genItem = false;
+            string[] itemParams = [];
+            if (ItemDict.ContainsKey(itemInfo.ItemName))
             {
-                Plugin.BepinLogger.LogMessage($"Unable to find item: {item.ItemName}");
+                Plugin.BepinLogger.LogMessage($"Unable to find item: {itemInfo.ItemName}");
                 return;
             }
-            string itemType = ItemDict[item.ItemName];
-
-            // Permanent items are added at start of day, add them to the list, then don't worry about them.
+            if (ItemDict.ContainsKey(itemInfo.ItemName))
+            {
+                itemType = ItemDict[itemInfo.ItemName];
+                // Permanent items are added at start of day, add them to the list, then don't worry about them.
+               
+            }
+            else {
+                itemParams = TryGetItemParamsFromCheckData(itemInfo);
+                itemType = itemParams[0];
+                if (itemType == null)
+                {
+                    Plugin.BepinLogger.LogWarning($"Unable to give {itemInfo.ItemName} as it couldn't be identified.");
+                    return;
+                }
+                genItem = true;
+            }
             if (itemType == "Permanent")
             {
-                ModItemManager.PermanentItemList.Add(GetPermanentItem(item.ItemName));
+                PermanentItem item;
+                if (genItem)
+                {
+                    int count = int.Parse(itemParams[2]);
+                    item = new PermanentItem(itemInfo.ItemName, null, true, itemParams[1], count);
+                }
+                else
+                {
+                    item = GetPermanentItem(itemInfo.ItemName);
+                }
+
+                if (item == null)
+                {
+                    PermanentItemList.Add(item);
+                }
+               
             }
             else if (ModInstance.IsInRun)
             {
@@ -202,39 +249,177 @@ namespace BluePrinceArchipelago.Core
 
                 if (itemType == "Generic")
                 {
-                    GetGenericItem(item.ItemName).AddItemToInventory();
+                    ModItem item;
+                    if (genItem)
+                    {
+                        item = new ModItem(itemInfo.ItemName, null, true);
+                    }
+                    else {
+                        item = GetGenericItem(itemInfo.ItemName);
+                    }
+
+                    if (item == null)
+                    {
+                        item.AddItemToInventory();
+                    }
                 }
                 else if (itemType == "Unique")
                 {
-                    GetUniqueItem(item.ItemName).AddItemToInventory();
+                    UniqueItem item;
+                    if (genItem)
+                    {
+                        item = new UniqueItem(itemInfo.ItemName, null, true);
+                    }
+                    else
+                    {
+                        item = GetUniqueItem(itemInfo.ItemName);
+                    }
+                    if (item == null)
+                    {
+                        item.AddItemToInventory();
+                    }
                 }
                 else if (itemType == "Junk")
                 {
-                    GetJunkItem(item.ItemName).AddItemToInventory();
+                    JunkItem item;
+                    if (genItem)
+                    {
+                        int count = int.Parse(itemParams[2]);
+                        item = new JunkItem(itemInfo.ItemName, null, true, itemParams[1], count);
+                    }
+                    else
+                    {
+                        item = GetJunkItem(itemInfo.ItemName);
+                    }
+                    if (item == null)
+                    {
+                        item.AddItemToInventory();
+                    }
                 }
                 else
                 {
-                    Plugin.BepinLogger.LogMessage($"Invalid item type: {itemType} for {item.ItemName}.");
+                    Plugin.BepinLogger.LogMessage($"Invalid item type: {itemType} for {itemInfo.ItemName}.");
                 }
             }
-            else {
+            else
+            {
                 if (itemType == "Generic")
                 {
-                    GetGenericItem(item.ItemName).AddItemToInventory();
+                    GetGenericItem(itemInfo.ItemName).AddItemToInventory();
                 }
                 else if (itemType == "Unique")
                 {
-                    GetUniqueItem(item.ItemName).AddItemToInventory();
+                    GetUniqueItem(itemInfo.ItemName).AddItemToInventory();
                 }
                 else if (itemType == "Junk")
                 {
-                    GetJunkItem(item.ItemName).AddItemToInventory();
+                    GetJunkItem(itemInfo.ItemName).AddItemToInventory();
                 }
                 else
                 {
-                    Plugin.BepinLogger.LogMessage($"Invalid item type: {itemType} for {item.ItemName}.");
+                    Plugin.BepinLogger.LogMessage($"Invalid item type: {itemType} for {itemInfo.ItemName}.");
                 }
             }
+
+        }
+        //Returns a list with the type of ModItem to use, the itemtype for junk/trap/permanent items and the Count of that item (number of that item to add).
+        private string[] TryGetItemParamsFromCheckData(ItemInfo item) {
+            if (item.ItemName != null)
+            {
+                string[] itemNameParts = item.ItemName.Split(' ');
+                if (itemNameParts[2] == "Coin")
+                if (item.ItemName.Contains("Extra"))
+                {
+                    if (itemNameParts.Length == 3)
+                    {
+                        if (itemNameParts[1] == "Allowance") {
+                            return ["Permanent", itemNameParts[1], itemNameParts[2]];
+                        }
+
+                        return ["Junk", itemNameParts[1], itemNameParts[2]];
+                    }
+                    else if (itemNameParts.Length == 4)
+                    {
+                        return ["Permanent", itemNameParts[2], itemNameParts[3]];
+                    }
+                    //else { //Could be either a generic item, or Unque item. Unable to differentiate right now.
+                    
+                    //}
+                }
+                else if (item.ItemName.Contains("Trap"))
+                {
+                    if (itemNameParts.Length == 3)
+                    {
+                        if (itemNameParts[1] == "End")
+                        {
+                            return ["Junk", "EOD", "-1"];
+                        }
+                        else if (itemNameParts[1] == "Lose") {
+                            return ["Junk", "Item", "-1"];
+                        }
+                           
+                        return ["Junk", itemNameParts[1], "-1"];
+                    }
+                    else if (itemNameParts.Length == 4)
+                    {
+                        return ["Junk", itemNameParts[2], itemNameParts[3]];
+                    }
+                }
+                    
+            }
+            Plugin.BepinLogger.LogMessage($"Unable to get item type for {item.ItemName}");
+            return null;
+        }
+        public bool IsItemSpawnable(GameObject item)
+        {
+            if (CoatCheck.Contains(item))
+            {
+                return false;
+            }
+            else if (EstateItems.Contains(item))
+            {
+                return false;
+            }
+            else if (UsedItems.Contains(item))
+            {
+                return false;
+            }
+            else if (PickedUp.Contains(item))
+            {
+                return false;
+            }
+            else if (PreSpawn.Contains(item)) {
+                return true;
+            }
+
+            return false;
+        }
+        public GameObject GetPreSpawnItem(string itemName) {
+            for (int i = 0; i < PreSpawn.GetCount(); i++)
+            {
+                GameObject prespawnItem = PreSpawn.arrayList[i].TryCast<GameObject>();
+                if (prespawnItem != null)
+                {
+                    if(prespawnItem.name.Trim().ToLower() == itemName.ToLower()) {
+                        return prespawnItem;
+                    }
+                }
+            }
+            return null;
+        }
+        public GameObject GetPickedUpItem(string itemName) {
+            for (int i = 0; i < PickedUp.GetCount(); i++)
+            {
+                GameObject pickedupItem = PickedUp.arrayList[i].TryCast<GameObject>();
+                if (pickedupItem != null)
+                {
+                    if (pickedupItem.name.Trim().ToLower() == itemName.ToLower())
+                    {
+                        return pickedupItem;
+                    }
+                }
+            }
+            return null;
         }
     }
 
@@ -332,41 +517,86 @@ namespace BluePrinceArchipelago.Core
         }
 
         public override void AddItemToInventory() {
-            //TODO add code handling adding the item.
+            if (_ItemType == "Gems")
+            {
+                AdjustGems(_Count);
+            }
+            else if (_ItemType == "Steps")
+            {
+                AdjustSteps(_Count);
+            }
+            else if (_ItemType == "Gold")
+            {
+                AdjustGold(_Count);
+            }
+            else if (_ItemType == "Dice")
+            {
+                AdjustDice(_Count);
+            }
+            else if (_ItemType == "Keys")
+            {
+                AdjustKeys(_Count);
+            }
+            else if (_ItemType == "Stars")
+            {
+                AdjustStars(_Count);
+            }
+            else if (_IsTrap) {
+                if (_ItemType == "freeze")
+                {
+                    //TODO add freeze trap handler.
+                }
+                else if (_ItemType == "eod")
+                {
+                    //TODO add eod trap handler (worst case just make it set steps to 0).
+                }
+                else if (_ItemType == "item") { 
+                    //TODO add lose item trap handler
+                }
+            }
+            else
+            {
+                Plugin.BepinLogger.LogWarning($"{_ItemType} is an invalid type, or is not currently supported.");
+            }
         }
-
+        private void AdjustGems(int count = 1) {
+            ModInstance.GemManager.FindIntVariable("Gem Adjustment Amount").Value = count;
+            // I think sound would be neat since it's more noticeable.
+            ModInstance.GemManager.SendEvent("Update with Sound");
+        }
         private void AdjustSteps(int count = 1) {
             // change the adjustment amount.
-            ModInstance.StepManager.FindIntVariable("Adjustment Amount").Value += count;
+            ModInstance.StepManager.FindIntVariable("Adjustment Amount").Value = count;
             // Send the "Update" event and the step counter should update.
             ModInstance.StepManager.SendEvent("Update");
         }
         private void AdjustGold(int count = 1) {
-            ModInstance.GoldManager.FindIntVariable("Adjustment Amount").Value += count;
+            ModInstance.GoldManager.FindIntVariable("Adjustment Amount").Value = count;
             ModInstance.GoldManager.SendEvent("Update"); // Might need to be "Add Coins" instead.
         }
         private void AdjustDice(int count = 1) {
-            ModInstance.DiceManager.FindIntVariable("Adjustment Amount").Value += count;
+            ModInstance.DiceManager.FindIntVariable("Adjustment Amount").Value = count;
             ModInstance.DiceManager.SendEvent("Update");
         }
         private void AdjustKeys(int count = 1) {
-            ModInstance.KeyManager.FindIntVariable("Adjustment Amount").Value += count;
+            ModInstance.KeyManager.FindIntVariable("Adjustment Amount").Value = count;
             ModInstance.KeyManager.SendEvent("Update");
         }
-        private void AdjustStars(int count = 1) {
+        private void AdjustStars(int count = 1)
+        {
             int totalStars = ModInstance.StarManager.FindIntVariable("TotalStars").Value;
             if (totalStars + count > 0)
             {
                 ModInstance.StarManager.FindIntVariable("TotalStars").Value += count;
             }
-            else {
+            else
+            {
                 ModInstance.StarManager.FindIntVariable("TotalStars").Value = 0;
             }
         }
-
     }
 
-    public class PermanentItem(string name, GameObject gameObject, bool isUnlocked, string itemType) : ModItem(name, gameObject, isUnlocked)
+    public class PermanentItem(string name, GameObject gameObject, bool isUnlocked, string itemType,int count = 1) : ModItem(name, gameObject, isUnlocked)
     {
         private string _ItemType = itemType;
 
@@ -376,36 +606,121 @@ namespace BluePrinceArchipelago.Core
             set { _ItemType = value; }
         }
 
-        private bool _IsUnlocked = true;
+        private bool _IsUnlocked = isUnlocked;
         public new bool IsUnlocked { 
             get { return _IsUnlocked; }
             set { _IsUnlocked = value; }
         }
+        private int _Count = count;
+        public new int Count
+        {
+            get { return _Count; }
+            set
+            {
+                _Count = value;
+            }
+        }
+
         public override void AddItemToInventory() {
-            //TODO add code handling adding the item.
+            if (_ItemType == "Gems")
+            {
+                AdjustGems(_Count);
+            }
+            else if (_ItemType == "Steps")
+            {
+                AdjustSteps(_Count);
+            }
+            else if (_ItemType == "Gold")
+            {
+                AdjustGold(_Count);
+            }
+            else if (_ItemType == "Allowance") 
+            {
+                //TODO Replace with a proper allowance function.
+                AdjustGold(_Count * 2);
+            }
+            else if (_ItemType == "Dice")
+            {
+                AdjustDice(_Count);
+            }
+            else if (_ItemType == "Keys")
+            {
+                AdjustKeys(_Count);
+            }
+            else
+            {
+                Plugin.BepinLogger.LogWarning($"{_ItemType} is an invalid type, or is not currently supported.");
+            }
+        }
+        private void AdjustGems(int count = 1)
+        {
+            ModInstance.GemManager.FindIntVariable("Gem Adjustment Amount").Value = count;
+            // I think sound would be neat since it's more noticeable.
+            ModInstance.GemManager.SendEvent("Update with Sound");
         }
         private void AdjustSteps(int count = 1)
         {
             // change the adjustment amount.
-            ModInstance.StepManager.FindIntVariable("Adjustment Amount").Value += count;
+            ModInstance.StepManager.FindIntVariable("Adjustment Amount").Value = count;
             // Send the "Update" event and the step counter should update.
             ModInstance.StepManager.SendEvent("Update");
         }
         //Todo replace with allowance.
         private void AdjustGold(int count = 1)
         {
-            ModInstance.GoldManager.FindIntVariable("Adjustment Amount").Value += count;
+            ModInstance.GoldManager.FindIntVariable("Adjustment Amount").Value = count;
             ModInstance.GoldManager.SendEvent("Update"); // Might need to be "Add Coins" instead.
         }
+        //Todo replace with allowance.
         private void AdjustDice(int count = 1)
         {
-            ModInstance.DiceManager.FindIntVariable("Adjustment Amount").Value += count;
+            ModInstance.DiceManager.FindIntVariable("Adjustment Amount").Value = count;
             ModInstance.DiceManager.SendEvent("Update");
         }
         private void AdjustKeys(int count = 1)
         {
-            ModInstance.KeyManager.FindIntVariable("Adjustment Amount").Value += count;
+            ModInstance.KeyManager.FindIntVariable("Adjustment Amount").Value = count;
             ModInstance.KeyManager.SendEvent("Update");
+        }     
+    }
+    public static class RegisterItems
+    {
+
+        public static void Register()
+        {
+            //Unique Items
+            //TODO once the replacement item code is working.
+            //Generic Items
+            Plugin.ModItemManager.AddItem(new ModItem("Dug Up Nothing", null, true, 1));
+            //Permanent Items
+            Plugin.ModItemManager.AddItem(new PermanentItem("Extra Allowance 1", null, false, "Allowance", 1));
+            Plugin.ModItemManager.AddItem(new PermanentItem("Extra Allowance 2", null, false, "Allowance", 2));
+            Plugin.ModItemManager.AddItem(new PermanentItem("Extra Starting Dice 1", null, false, "Dice", 1));
+            Plugin.ModItemManager.AddItem(new PermanentItem("Extra Starting Dice 2", null, false, "Dice", 2));
+            Plugin.ModItemManager.AddItem(new PermanentItem("Extra Starting Keys 1", null, false, "Keys", 1));
+            Plugin.ModItemManager.AddItem(new PermanentItem("Extra Starting Keys 2", null, false, "Keys", 2));
+            Plugin.ModItemManager.AddItem(new PermanentItem("Extra Starting Steps 1", null, false, "Steps", 1));
+            Plugin.ModItemManager.AddItem(new PermanentItem("Extra Starting Steps 2", null, false, "Steps", 2));
+            Plugin.ModItemManager.AddItem(new PermanentItem("Extra Starting Gems 1", null, false, "Gems", 1));
+            Plugin.ModItemManager.AddItem(new PermanentItem("Extra Starting Gems 2", null, false, "Gems", 2));
+            //Junk Items
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Gold 1", null, true, "Gold", 1));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Gold 2", null, true, "Gold", 2));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Gold 5", null, true, "Gold", 5));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Dice 1", null, true, "Dice", 1));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Dice 2", null, true, "Dice", 2));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Dice 4", null, true, "Dice", 4));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Gems 1", null, true, "Gems", 1));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Gems 2", null, true, "Gems", 2));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Keys 1", null, true, "Keys", 1));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Keys 2", null, true, "Keys", 2));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Keys 3", null, true, "Keys", 3));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Steps 1", null, true, "Steps", 1));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Steps 2", null, true, "Steps", 2));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Steps 5", null, true, "Steps", 5));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Stars 1", null, true, "Stars", 1));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Stars 2", null, true, "Stars", 2));
+            Plugin.ModItemManager.AddItem(new JunkItem("Extra Stars 5", null, true, "Stars", 5));
         }
     }
 }

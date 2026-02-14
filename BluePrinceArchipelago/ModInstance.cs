@@ -21,6 +21,7 @@ namespace BluePrinceArchipelago
         public static ModInstance Instance;
         private static bool _SceneLoaded = false;
         private static bool _StateLoaded = false;
+        public static PlayMakerFSM GemManager = new();
         public static PlayMakerFSM StepManager = new();
         public static PlayMakerFSM GoldManager = new();
         public static PlayMakerFSM DiceManager = new();
@@ -81,13 +82,15 @@ namespace BluePrinceArchipelago
                 _PlanPicker = GameObject.Find("PLAN PICKER").gameObject;
                 _Inventory = GameObject.Find("__SYSTEM/Inventory").gameObject;
                 _RoomsInHouse = GameObject.Find("__SYSTEM/Room Lists/Rooms in House").gameObject;
-                StepManager = GameObject.Find("__SYSTEM/HUD/Steps")?.GetFsm("Steps");
-                GoldManager = GameObject.Find("__SYSTEM/HUD/Gold")?.GetFsm("Gold");
-                DiceManager = GameObject.Find("__SYSTEM/HUD/Bones")?.GetFsm("Bones");
-                KeyManager = GameObject.Find("__SYSTEM/HUD/Keys")?.GetFsm("Keys");
+                GemManager = GameObject.Find("__SYSTEM/HUD/Gems")?.GetFsm("Gem Manager");
+                StepManager = GameObject.Find("__SYSTEM/HUD/Steps")?.GetFsm("Steps Manager");
+                GoldManager = GameObject.Find("__SYSTEM/HUD/Gold")?.GetFsm("Gold Manager");
+                DiceManager = GameObject.Find("__SYSTEM/HUD/Bones")?.GetFsm("Bone Manager");
+                KeyManager = GameObject.Find("__SYSTEM/HUD/Keys")?.GetFsm("Key Manager");
                 StarManager = GameObject.Find("__SYSTEM/HUD/Stars")?.GetFsm("Stars");
                 LoadArrays();
                 InitializeRooms();
+                RegisterItems.Register(); // Register the initial state of the items.
                 _HasInitializedRooms = true;
                 ModEventHandler.LocationFound += OnLocalLocationSent;
                 Harmony.CreateAndPatchAll(typeof(ItemPatches), "ItemPatches"); //Specify type of patches so they can be applied and removed as required.
@@ -173,6 +176,7 @@ namespace BluePrinceArchipelago
             // Attempt to recieve items that were recieved before the game was loaded.
             Instance.QueueManager.ReleaseAllQueuedItems();
             // Handle Start of day code for Permanent items (and maybe curses later).
+            ModItemManager.LoadInventories();
             Plugin.ModItemManager.StartOfDay(dayNum);
         }
         // handles end of day code, Currently unsure if this is good timing.

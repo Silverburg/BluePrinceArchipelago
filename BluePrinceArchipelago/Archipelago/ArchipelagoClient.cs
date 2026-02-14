@@ -217,7 +217,7 @@ public class ArchipelagoClient
             long locationId = scout.Key;
             long itemId = scout.Value.ItemId;
             string itemName = scout.Value.ItemName ?? $"?Item {itemId}";
-            ServerData.ItemDict[itemId] = itemName;
+            ServerData.ItemDict[itemId] = itemName; //Might need to change this since ids
             ServerData.LocationItemMap[locationId] = scout.Value;
         }
     }

@@ -44,6 +44,7 @@ namespace BluePrinceArchipelago {
             ModObject.AddComponent<ModInstance>();
             ArchipelagoConsole.LogMessage($"{ModDisplayInfo} loaded!");
             State.Initialize();
+            CommandManager.initializeLocalCommands();
             ArchipelagoClient.LoadStateData();
         }
     }
