@@ -10,3 +10,15 @@ C:\Users\Jacob\source\repos\BluePrinceArchipelago\BluePrinceArchipelago\obj\Debu
 C:\Users\Jacob\source\repos\BluePrinceArchipelago\BluePrinceArchipelago\obj\Debug\refint\BluePrinceArchipelago.dll
 C:\Users\Jacob\source\repos\BluePrinceArchipelago\BluePrinceArchipelago\obj\Debug\BluePrinceArchipelago.pdb
 C:\Users\Jacob\source\repos\BluePrinceArchipelago\BluePrinceArchipelago\obj\Debug\ref\BluePrinceArchipelago.dll
+D:\Steam\steamapps\common\Blue Prince\BepInEx\plugins\BluePrinceArchipelago\BluePrinceArchipelago.deps.json
+D:\Steam\steamapps\common\Blue Prince\BepInEx\plugins\BluePrinceArchipelago\BluePrinceArchipelago.dll
+D:\Steam\steamapps\common\Blue Prince\BepInEx\plugins\BluePrinceArchipelago\BluePrinceArchipelago.pdb
+C:\Game Dev Stuff\PortableGit\home\portable\repos\bp_ap_mod\BluePrinceArchipelago\BluePrinceArchipelago\obj\Debug\BluePrinceArchipelago.csproj.AssemblyReference.cache
+C:\Game Dev Stuff\PortableGit\home\portable\repos\bp_ap_mod\BluePrinceArchipelago\BluePrinceArchipelago\obj\Debug\BluePrinceArchipelago.GeneratedMSBuildEditorConfig.editorconfig
+C:\Game Dev Stuff\PortableGit\home\portable\repos\bp_ap_mod\BluePrinceArchipelago\BluePrinceArchipelago\obj\Debug\BluePrinceArchipelago.csproj.CoreCompileInputs.cache
+C:\Game Dev Stuff\PortableGit\home\portable\repos\bp_ap_mod\BluePrinceArchipelago\BluePrinceArchipelago\obj\Debug\BluePrinceArchipelago.sourcelink.json
+C:\Game Dev Stuff\PortableGit\home\portable\repos\bp_ap_mod\BluePrinceArchipelago\BluePrinceArchipelago\obj\Debug\BluePrin.43B963E3.Up2Date
+C:\Game Dev Stuff\PortableGit\home\portable\repos\bp_ap_mod\BluePrinceArchipelago\BluePrinceArchipelago\obj\Debug\BluePrinceArchipelago.dll
+C:\Game Dev Stuff\PortableGit\home\portable\repos\bp_ap_mod\BluePrinceArchipelago\BluePrinceArchipelago\obj\Debug\refint\BluePrinceArchipelago.dll
+C:\Game Dev Stuff\PortableGit\home\portable\repos\bp_ap_mod\BluePrinceArchipelago\BluePrinceArchipelago\obj\Debug\BluePrinceArchipelago.pdb
+C:\Game Dev Stuff\PortableGit\home\portable\repos\bp_ap_mod\BluePrinceArchipelago\BluePrinceArchipelago\obj\Debug\ref\BluePrinceArchipelago.dll
